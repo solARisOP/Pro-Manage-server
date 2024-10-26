@@ -246,22 +246,10 @@ const updateTask = async (req, res) => {
         ))
 }
 
-const getAllUsers = async(req, res) => {
-    const users = await User.find({}).select("-password -name -createdAt -updatedAt -refreshToken")
-    return res
-    .status(200)
-    .json(new ApiResponse(
-        200,
-        users,
-        "all users fetched successfully"
-    ))
-}
-
 export {
     createTask,
     getTaskforEdit,
     getTaskforView,
     deleteTask,
-    updateTask,
-    getAllUsers
+    updateTask
 }

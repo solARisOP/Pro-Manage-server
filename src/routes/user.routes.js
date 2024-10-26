@@ -4,21 +4,22 @@ import {
     logoutUser, 
     registerUser,
     updateUser,
-    getUser
+    getUser,
+    getAllUsers
 } from "../controllers/user.controller.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 
 const router = Router()
 
 //routes
-router.route('/register-user').post(registerUser)
+router.route('/').post(registerUser).get(verifyJWT, getUser)
 
-router.route('/login-user').post(loginUser)
+router.route('/login').put(loginUser)
 
-router.route('/logout-user').post(verifyJWT, logoutUser)
+router.route('/logout').patch(verifyJWT, logoutUser)
 
-router.route('/update-user/:field').patch(verifyJWT, updateUser)
+router.route('/:field').patch(verifyJWT, updateUser)
 
-router.route('/get-user').get(verifyJWT, getUser)
+router.route('/all').get(verifyJWT, getAllUsers)
 
 export default router

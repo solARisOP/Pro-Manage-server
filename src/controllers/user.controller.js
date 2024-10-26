@@ -158,10 +158,22 @@ const getUser = async(req, res) => {
     ))
 }
 
+const getAllUsers = async(_, res) => {
+    const users = await User.find({}).select("-password -name -createdAt -updatedAt -refreshToken")
+    return res
+    .status(200)
+    .json(new ApiResponse(
+        200,
+        users,
+        "all users fetched successfully"
+    ))
+}
+
 export {
     registerUser,
     loginUser,
     logoutUser,
     updateUser,
-    getUser
+    getUser,
+    getAllUsers
 }

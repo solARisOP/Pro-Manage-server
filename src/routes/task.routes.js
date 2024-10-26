@@ -4,24 +4,17 @@ import {
     deleteTask,
     getTaskforView,
     getTaskforEdit,
-    updateTask,
-    getAllUsers
+    updateTask
 } from "../controllers/task.controller.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 
 const router = Router()
 
 //routes
-router.route('/create-task').post(verifyJWT, createTask)
+router.route('/').post(verifyJWT, createTask).get(getTaskforView)
 
-router.route('/delete-task/:key').delete(verifyJWT, deleteTask)
+router.route('/:key').delete(verifyJWT, deleteTask).patch(verifyJWT, updateTask)
 
-router.route('/update-task/:key').patch(verifyJWT, updateTask)
-
-router.route('/get-task-view').get(getTaskforView)
-
-router.route('/get-task-edit').get(verifyJWT, getTaskforEdit)
-
-router.route('/get-all-users').get(verifyJWT, getAllUsers)
+router.route('/edit').get(verifyJWT, getTaskforEdit)
 
 export default router
