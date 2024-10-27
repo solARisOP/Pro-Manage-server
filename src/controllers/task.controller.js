@@ -17,12 +17,12 @@ const createTask = async (req, res) => {
     const newChecklist = await Promise.all(checklist.map(todo=>Todo.create({
         text: todo.text,
         task: task._id,
-        isDone: todo._isDone
+        isDone: todo.isDone
     })))
 
-    await Promise.all([...members.map(member => Member.create({
+    await Promise.all([...Object.keys(members).map(idx => Member.create({
         assignedBy: req.user._id,
-        user: new mongoose.Types.ObjectId(member),
+        user: new mongoose.Types.ObjectId(idx),
         task: task._id
     })), Member.create({
         assignedBy: req.user._id,
@@ -97,6 +97,9 @@ const getTaskforEdit = async (req, res) => {
                         $addFields: {
                             canUnassign: {
                                 $cond: [{$and:[{$eq : [req.user._id, "$assignedBy"]},{$ne: [req.user._id, "$user._id"]}]}, 1, 0]
+                            },
+                            user: {
+                                $first: '$user'
                             }
                         }
                     }
@@ -110,13 +113,13 @@ const getTaskforEdit = async (req, res) => {
         throw new ApiError(404, "task does not exists")
     }
 
-    const assignedUsers = task.members.map(mem=>mem.user._id)
+    const assignedUsers = task[0].members.map(mem=>mem.user._id)
 
     const unassignedUsers = await User.find({
         _id: {
             $nin: [...assignedUsers, req.user._id]
         }
-    })
+    }).select("+email")
 
     return res
         .status(200)
