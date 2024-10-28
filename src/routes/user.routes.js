@@ -5,7 +5,8 @@ import {
     registerUser,
     updateUser,
     getUser,
-    getAllUsers
+    getAllUsers,
+    addUser
 } from "../controllers/user.controller.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 
@@ -21,5 +22,7 @@ router.route('/logout').patch(verifyJWT, logoutUser)
 router.route('/:field').patch(verifyJWT, updateUser)
 
 router.route('/all').get(verifyJWT, getAllUsers)
+
+router.route('/dashboard').post(verifyJWT, addUser)
 
 export default router

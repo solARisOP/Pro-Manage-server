@@ -95,12 +95,23 @@ const getTaskforEdit = async (req, res) => {
                     },
                     {
                         $addFields: {
+                            user: { $first: '$user' }
+                        }
+                    },
+                    {
+                        $addFields: {
                             canUnassign: {
-                                $cond: [{$and:[{$eq : [req.user._id, "$assignedBy"]},{$ne: [req.user._id, "$user._id"]}]}, 1, 0]
+                                $cond: [
+                                    {
+                                        $and:[
+                                            { $eq: [ req.user._id, "$assignedBy" ] },
+                                            { $ne: [ req.user._id, "$user._id" ] }
+                                        ]
+                                    },
+                                    1, 
+                                    0
+                                ]
                             },
-                            user: {
-                                $first: '$user'
-                            }
                         }
                     }
                 ],
@@ -184,7 +195,7 @@ const deleteTask = async (req, res) => {
         throw new ApiError(403, "task does not belong to the particular user");
     }
 
-    await Promise.all([Todo.deleteMany({task : task._id}), Member.deleteMany({task : task._id}), Quiz.findByIdAndDelete(task._id)])
+    await Promise.all([Todo.deleteMany({task : task._id}), Member.deleteMany({task : task._id}), Task.findByIdAndDelete(task._id)])
 
     return res
         .status(200)
@@ -212,21 +223,21 @@ const updateTask = async (req, res) => {
         if(todo._id) {
             newTodo = await Todo.findById(todo._id);
         }
-        newTodo.title = todo.text
+        newTodo.text = todo.text
         newTodo.task = task._id
         newTodo.isDone = todo.isDone
-        todoPromises.push(newTodo)
+        todoPromises.push(newTodo.save({new : true}))
     }
-
+    
     const newChecklist = await Promise.all(todoPromises)
     const checkListIds = newChecklist.map(Id => Id._id.toString())
 
     const taskChecklist = await Todo.find({task: task._id})
-    const promises = [];
+    const deleteTodos = [];
     taskChecklist.forEach(todo => {
         const id = todo._id.toString()
         if(!checkListIds.includes(id)) {
-            promises.push(Todo.findByIdAndDelete(todo._id))
+            deleteTodos.push(Todo.findByIdAndDelete(todo._id))
         }
     });
 
@@ -236,7 +247,9 @@ const updateTask = async (req, res) => {
     await Promise.all([...deleteTodos, ...newMembers, ...removeMembers, task.save({new: true})])
 
     const updateTask = {
-        ...task,
+        title : task.title,
+        priority : task.priority,
+        dueDate : task.dueDate,
         checklist : newChecklist
     }
 

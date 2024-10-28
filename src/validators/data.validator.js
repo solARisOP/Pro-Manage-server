@@ -13,7 +13,7 @@ const validateData = (title, priority, checklist, dueDate) => {
             throw new ApiError(400, `${date.toDateString()} is a invalid date`)
         }
     }
-    else if (!priority || !['low', 'mid', 'high'].includes(priority.trim())) {
+    else if (!priority || !['low', 'moderate', 'high'].includes(priority.trim())) {
         throw new ApiError(400, `${priority} is a invalid priority type`)
     }
     else if (!checklist || !checklist.length) {

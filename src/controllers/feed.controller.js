@@ -1,9 +1,11 @@
 import { ApiResponse } from '../utils/ApiResponse.js'
 import { Member } from '../models/member.model.js';
+import { ApiError } from '../utils/ApiError.js';
 
 const getDashboard = async(req, res) => {
     const {timeline} = req.params
     const now = new Date();
+    now.setHours(0, 0, 0, 0);
 
     let start, end
     if(timeline === 'week') {
@@ -11,7 +13,6 @@ const getDashboard = async(req, res) => {
 
         start = new Date(now);
         start.setDate(now.getDate() - dayOfWeek);
-        start.setHours(0, 0, 0, 0);
 
         end = new Date(start);
         end.setDate(start.getDate() + 7);        
@@ -20,10 +21,13 @@ const getDashboard = async(req, res) => {
         start = new Date(now.getFullYear(), now.getMonth(), 1); 
         end = new Date(now.getFullYear(), now.getMonth() + 1, 1); 
     }
-    else {
+    else if(timeline === 'today') {
         start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         end = new Date(start);
         end.setDate(start.getDate() + 1);
+    }
+    else {
+        throw new ApiError(400, "invalid timeline param")
     }
 
     const tasks = await Member.aggregate([
@@ -39,6 +43,19 @@ const getDashboard = async(req, res) => {
                 foreignField: "_id",
                 pipeline: [
                     {
+                        $match : {
+                            $expr: {
+                                $or : [
+                                    { $not: { $gt: ["$dueDate", null] } } ,
+                                    { $and: [
+                                        {$gte: [ "$dueDate", start ]}, 
+                                        {$lt: [ "$dueDate", end ]} 
+                                    ]}
+                                ]
+                            }
+                        }
+                    },
+                    {
                         $lookup : {
                             from: "todos",
                             localField: "_id",
@@ -47,23 +64,21 @@ const getDashboard = async(req, res) => {
                         }
                     },
                 ],
-                as: "tasks"
+                as: "task"
             }
         },
         {
-            $filter: {
-                input: "$tasks",
-                as: "task",
-                cond: { 
-                    $and: [
-                        {$gte: [ "$$task.dueDate", start ]}, 
-                        {$lt: [ "$$task.dueDate", end ]} 
-                    ]
-                }
+            $addFields : { 
+                task :  { $first : "$task" }
             }
         },
         {
-            $replaceRoot: {newRoot: "$tasks"}
+            $match: { 
+                task: { $exists: true } 
+            } 
+        },
+        {
+            $replaceRoot: {newRoot : '$task'}
         }
     ])
 

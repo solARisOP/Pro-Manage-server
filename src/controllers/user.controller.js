@@ -1,3 +1,6 @@
+import mongoose from "mongoose"
+import { Member } from "../models/member.model.js"
+import { Task } from "../models/task.model.js"
 import { User } from "../models/user.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
@@ -172,11 +175,28 @@ const getAllUsers = async(req, res) => {
     ))
 }
 
+const addUser = async(req, res) => {
+    const {key} = req.params
+
+    const tasks = await Task.find({user : req.user._id})
+
+    await Promise.all(tasks.map(x=>Member.findOneAndUpdate({user : new mongoose.Types.ObjectId(key), task: x.task}, { $set: {} }, {upsert: true})))
+
+    return res
+    .status(201)
+    .json(new ApiResponse(
+        201,
+        {},
+        "user added to dashboard"
+    ))
+}
+
 export {
     registerUser,
     loginUser,
     logoutUser,
     updateUser,
     getUser,
-    getAllUsers
+    getAllUsers,
+    addUser
 }
