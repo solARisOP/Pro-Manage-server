@@ -93,7 +93,7 @@ const loginUser = async(req, res) => {
     ))
 }
 
-const logoutUser = async(req, res) => {
+const logoutUser = async(req, res) => {    
     await User.findByIdAndUpdate(
         req.user._id, 
         {
@@ -156,7 +156,7 @@ const getUser = async(req, res) => {
     .status(200)
     .json(new ApiResponse(
         200,
-        {user:req.user},
+        req.user,
         "user fetched sucessfully"
     ))
 }

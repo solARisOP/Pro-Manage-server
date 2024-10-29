@@ -187,21 +187,22 @@ const deleteTask = async (req, res) => {
     const { key } = req.params;
     
     const task = await Task.findById(key);
-
     if (!task) {
         throw new ApiError(404, "No task exists for this particular id");
     }
-    else if (!task.owner.equals(req.user._id)) {
+
+    const member = await Member.find({task : task._id, user: req.user._id});
+    if (!member) {
         throw new ApiError(403, "task does not belong to the particular user");
     }
 
-    await Promise.all([Todo.deleteMany({task : task._id}), Member.deleteMany({task : task._id}), Task.findByIdAndDelete(task._id)])
+    const delPromises = await Promise.all([Todo.deleteMany({task : task._id}), Member.deleteMany({task : task._id}), Task.findByIdAndDelete(task._id)])
 
     return res
         .status(200)
         .json(new ApiResponse(
             200,
-            {},
+            delPromises[2],
             "task deleted successfully"
         ))
 }
@@ -247,9 +248,11 @@ const updateTask = async (req, res) => {
     await Promise.all([...deleteTodos, ...newMembers, ...removeMembers, task.save({new: true})])
 
     const updateTask = {
+        _id : task._id,
         title : task.title,
-        priority : task.priority,
-        dueDate : task.dueDate,
+        priority: task.priority,
+        category: task.category,
+        dueDate: task.dueDate,
         checklist : newChecklist
     }
 
@@ -262,10 +265,26 @@ const updateTask = async (req, res) => {
         ))
 }
 
+const updateTaskCategory = async(req, res) => {
+    const {key} = req.params
+    const {category} = req.body
+    
+    const task = await Task.findByIdAndUpdate(new mongoose.Types.ObjectId(key), {category}, {new: true});
+
+    return res
+    .status(200)
+    .json(new ApiResponse(
+        200,
+        task,
+        "category updated successfully"
+    ))
+}
+
 export {
     createTask,
     getTaskforEdit,
     getTaskforView,
     deleteTask,
-    updateTask
+    updateTask,
+    updateTaskCategory
 }

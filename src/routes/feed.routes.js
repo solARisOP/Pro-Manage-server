@@ -8,8 +8,8 @@ import { verifyJWT } from "../middlewares/auth.middleware.js"
 const router = Router()
 
 //routes
-router.route('/analytics').get(verifyJWT, getAnalysis)
+router.route('/').get(verifyJWT, getDashboard)
 
-router.route('/:timeline').get(verifyJWT, getDashboard)
+router.route('/analytics').get(verifyJWT, getAnalysis)
 
 export default router

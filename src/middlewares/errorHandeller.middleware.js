@@ -1,5 +1,6 @@
 const errorHandeler = (err, req, res, next)=>{
     let statusCode = 500;
+    console.log(err);
     
     if(!err.statusCode && err.name=='ValidationError') statusCode = 400
 

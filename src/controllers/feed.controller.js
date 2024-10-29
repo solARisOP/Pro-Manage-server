@@ -2,26 +2,26 @@ import { ApiResponse } from '../utils/ApiResponse.js'
 import { Member } from '../models/member.model.js';
 import { ApiError } from '../utils/ApiError.js';
 
-const getDashboard = async(req, res) => {
-    const {timeline} = req.params
+const getDashboard = async (req, res) => {
+    const { timeline } = req.query
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
     let start, end
-    if(timeline === 'week') {
+    if (timeline === 'week') {
         const dayOfWeek = now.getDay();
 
         start = new Date(now);
         start.setDate(now.getDate() - dayOfWeek);
 
         end = new Date(start);
-        end.setDate(start.getDate() + 7);        
+        end.setDate(start.getDate() + 7);
     }
-    else if(timeline === 'month') {
-        start = new Date(now.getFullYear(), now.getMonth(), 1); 
-        end = new Date(now.getFullYear(), now.getMonth() + 1, 1); 
+    else if (timeline === 'month') {
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     }
-    else if(timeline === 'today') {
+    else if (timeline === 'today') {
         start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         end = new Date(start);
         end.setDate(start.getDate() + 1);
@@ -32,31 +32,33 @@ const getDashboard = async(req, res) => {
 
     const tasks = await Member.aggregate([
         {
-            $match : {
-                user : req.user._id
+            $match: {
+                user: req.user._id
             }
         },
         {
-            $lookup : {
+            $lookup: {
                 from: "tasks",
                 localField: "task",
                 foreignField: "_id",
                 pipeline: [
                     {
-                        $match : {
+                        $match: {
                             $expr: {
-                                $or : [
-                                    { $not: { $gt: ["$dueDate", null] } } ,
-                                    { $and: [
-                                        {$gte: [ "$dueDate", start ]}, 
-                                        {$lt: [ "$dueDate", end ]} 
-                                    ]}
+                                $or: [
+                                    { $not: { $gt: ["$dueDate", null] } },
+                                    {
+                                        $and: [
+                                            { $gte: ["$dueDate", start] },
+                                            { $lt: ["$dueDate", end] }
+                                        ]
+                                    }
                                 ]
                             }
                         }
                     },
                     {
-                        $lookup : {
+                        $lookup: {
                             from: "todos",
                             localField: "_id",
                             foreignField: "task",
@@ -68,93 +70,120 @@ const getDashboard = async(req, res) => {
             }
         },
         {
-            $addFields : { 
-                task :  { $first : "$task" }
+            $addFields: {
+                task: { $first: "$task" }
             }
         },
         {
-            $match: { 
-                task: { $exists: true } 
-            } 
+            $match: {
+                task: { $exists: true }
+            }
         },
         {
-            $replaceRoot: {newRoot : '$task'}
+            $replaceRoot: { newRoot: '$task' }
         }
     ])
 
     return res
-    .status(200)
-    .json(new ApiResponse(
-        200,
-        tasks,
-        "homepage retrieved sucessfully"
-    ))
+        .status(200)
+        .json(new ApiResponse(
+            200,
+            tasks,
+            "homepage retrieved sucessfully"
+        ))
 }
 
-const getAnalysis = async(req, res) => {
+const getAnalysis = async (req, res) => {
     const analysis = await Member.aggregate([
         {
-            $match : {
-                user : req.user._id
+            $match: {
+                user: req.user._id
             }
         },
         {
-            $lookup : {
+            $lookup: {
                 from: "tasks",
                 localField: "task",
                 foreignField: "_id",
-                as: "tasks"
+                as: "task"
             }
         },
         {
-            $replaceRoot: {newRoot: "$tasks"}
+            $addFields: {
+                task: { $first: '$task' }
+            }
+        },
+        {
+            $replaceRoot: { newRoot: "$task" }
         },
         {
             $facet: {
-                groupByCategory :[
+                groupByCategory: [
                     {
-                        $group : {
-                            _id: "$tasks.category",
-                            count: {$sum : 1}
+                        $group: {
+                            _id: "$category",
+                            count: { $sum: 1 }
                         }
                     }
                 ],
                 groupByPriority: [
                     {
-                        $group : {
-                            _id: "$tasks.priority",
-                            count: {$sum : 1}
+                        $group: {
+                            _id: "$priority",
+                            count: { $sum : 1 }
                         }
                     }
                 ],
                 dueDateCount: [
                     {
-                        $filter : {
-                            input: "$tasks.dueDate",
-                            as: "date",
-                            cond: {
-                                $and: [
-                                    {$ne : [$$date, null]},
-                                    {$ne : [$$date, undefined]}
-                                ]
-                            }
+                        $match: {
+                            dueDate: { $ne : null }
                         }
                     },
                     {
-                        $count: "count"
+                        $count : 'docsCount'
                     }
                 ]
+            }
+        },
+        {
+            $project: {
+                dueDate : { $first : '$dueDateCount.docsCount' },
+                priority : {
+                    $arrayToObject : {
+                        $map : {
+                            input : "$groupByPriority",
+                            as : "priority",
+                            in : {
+                                k : '$$priority._id',
+                                v : '$$priority.count'
+                            }
+                        }
+                    }
+                },
+                category: {
+                    $arrayToObject : {
+                        $map : {
+                            input : "$groupByCategory",
+                            as : "category",
+                            in : {
+                                k : '$$category._id',
+                                v : '$$category.count'
+                            }
+                        }
+                    }
+                }
             }
         }
     ])
 
     return res
-    .status(200)
-    .json(new ApiResponse(
-        200,
-        analysis,
-        "analysis retrieved sucessfully"
-    ))
+        .status(200)
+        .json(new ApiResponse(
+            200,
+            analysis[0],
+            "analysis retrieved sucessfully"
+        ))
 }
 
 export {
