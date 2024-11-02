@@ -9,6 +9,7 @@ const validateData = (title, priority, checklist, dueDate) => {
 
         const currentDate = getMidnightTime(new Date())
         const date = getMidnightTime(dueDate)
+        console.log(typeof dueDate);
         console.log(dueDate);
         console.log(date);
         console.log(currentDate);
