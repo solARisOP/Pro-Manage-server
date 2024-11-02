@@ -8,7 +8,10 @@ const validateData = (title, priority, checklist, dueDate) => {
     else if(dueDate) {
         const currentDate = getMidnightTime(new Date())
         const date = getMidnightTime(dueDate)
-        if(currentDate > date) {
+        console.log(date);
+        console.log(currentDate);
+        
+        if(currentDate.getTime() > date.getTime()) {
             throw new ApiError(400, `${date.toDateString()} is a invalid date`)
         }
     }
