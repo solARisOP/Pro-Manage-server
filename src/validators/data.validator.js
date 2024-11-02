@@ -6,8 +6,10 @@ const validateData = (title, priority, checklist, dueDate) => {
         throw new ApiError(400, "task should contain a title")
     }
     else if(dueDate) {
+
         const currentDate = getMidnightTime(new Date())
         const date = getMidnightTime(dueDate)
+        console.log(dueDate);
         console.log(date);
         console.log(currentDate);
         
