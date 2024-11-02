@@ -7,7 +7,7 @@ const app = express()
 
 //middlwares
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: CORS_ORIGIN,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     credentials: true,
 }));
