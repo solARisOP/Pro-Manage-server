@@ -39,7 +39,11 @@ const createTask = async (req, res) => {
         priority: task.priority,
         category: task.category,
         dueDate: task.dueDate,
-        checklist: newChecklist
+        checklist: newChecklist,
+        assignedBy: {
+            _id : req.user._id,
+            name : req.user.name
+        }
     }
 
     if (date) {
