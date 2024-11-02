@@ -1,34 +1,11 @@
 import { ApiResponse } from '../utils/ApiResponse.js'
 import { Member } from '../models/member.model.js';
-import { ApiError } from '../utils/ApiError.js';
+import { getDateRanges } from '../utils/dateHelpers.js';
 
 const getDashboard = async (req, res) => {
     const { timeline } = req.query
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    let start, end
-    if (timeline === 'week') {
-        const dayOfWeek = now.getDay();
-
-        start = new Date(now);
-        start.setDate(now.getDate() - dayOfWeek);
-
-        end = new Date(start);
-        end.setDate(start.getDate() + 7);
-    }
-    else if (timeline === 'month') {
-        start = new Date(now.getFullYear(), now.getMonth(), 1);
-        end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    }
-    else if (timeline === 'today') {
-        start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        end = new Date(start);
-        end.setDate(start.getDate() + 1);
-    }
-    else {
-        throw new ApiError(400, "invalid timeline param")
-    }
+    
+    const {start, end} = getDateRanges(timeline)
 
     const tasks = await Member.aggregate([
         {
@@ -64,7 +41,7 @@ const getDashboard = async (req, res) => {
                             foreignField: "task",
                             as: "checklist"
                         }
-                    },
+                    }
                 ],
                 as: "task"
             }
@@ -77,6 +54,26 @@ const getDashboard = async (req, res) => {
         {
             $match: {
                 task: { $exists: true }
+            }
+        },
+        {
+            $lookup : {
+                from: 'users',
+                localField: 'assignedBy',
+                foreignField: '_id',
+                pipeline: [
+                    {
+                        $project : {
+                            name : 1
+                        }
+                    }
+                ],
+                as: 'assignedBy'
+            }
+        },
+        {
+            $addFields: {
+                'task.assignedBy': { $first: "$assignedBy" }
             }
         },
         {

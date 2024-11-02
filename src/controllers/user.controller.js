@@ -1,6 +1,4 @@
-import mongoose from "mongoose"
 import { Member } from "../models/member.model.js"
-import { Task } from "../models/task.model.js"
 import { User } from "../models/user.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
@@ -140,10 +138,14 @@ const updateUser = async (req, res) => {
     user[field] = content;
     await user.save();
 
-    return res
-        .status(200)
+    if(field !== 'name') {
+        res
         .clearCookie("accessToken", cookieOptions)
         .clearCookie("refreshToken", cookieOptions)
+    }
+
+    return res
+        .status(200)
         .json(new ApiResponse(
             200,
             {},
@@ -176,11 +178,25 @@ const getAllUsers = async(req, res) => {
 }
 
 const addUser = async(req, res) => {
-    const {key} = req.params
+    const { email } = req.body
 
-    const tasks = await Task.find({user : req.user._id})
+    const tasks = await Member.find({user : req.user._id})
 
-    await Promise.all(tasks.map(x=>Member.findOneAndUpdate({user : new mongoose.Types.ObjectId(key), task: x.task}, { $set: {} }, {upsert: true})))
+    const user = await User.findOne({email})
+
+    if(!user) {
+        throw new ApiError(404, 'no user with the given email address exists')
+    }
+
+    const promises = []
+    for (const task of tasks) {
+        const member = await Member.findOne({user : user._id, task: task.task})
+        if(!member) {
+            promises.push(Member.create({user : user._id, task: task.task, assignedBy: req.user._id}))
+        }
+    }
+
+    await Promise.all(promises)
 
     return res
     .status(201)

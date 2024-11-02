@@ -1,15 +1,14 @@
 import { ApiError } from "../utils/ApiError.js"
+import { getMidnightTime } from "../utils/dateHelpers.js"
 
 const validateData = (title, priority, checklist, dueDate) => {
     if (!title || !title.trim()) {
         throw new ApiError(400, "task should contain a title")
     }
     else if(dueDate) {
-        const date = new Date(dueDate)
-        const currentDate = new Date()
-        currentDate.setHours(0,0,0,0)
-        
-        if(date.toDateString() === 'Invalid Date' || currentDate > date) {
+        const currentDate = getMidnightTime(new Date())
+        const date = getMidnightTime(dueDate)
+        if(currentDate > date) {
             throw new ApiError(400, `${date.toDateString()} is a invalid date`)
         }
     }
@@ -28,5 +27,5 @@ const validateData = (title, priority, checklist, dueDate) => {
 }
 
 export {
-    validateData,
+    validateData
 }
