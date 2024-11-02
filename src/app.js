@@ -7,7 +7,7 @@ const app = express()
 
 //middlwares
 app.use(cors({
-    origin: CORS_ORIGIN,
+    origin: process.env.CORS_ORIGIN,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     credentials: true,
 }));
