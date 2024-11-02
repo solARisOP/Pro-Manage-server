@@ -227,7 +227,7 @@ const deleteTask = async (req, res) => {
 const updateTask = async (req, res) => {
     const { key } = req.params;
 
-    const member = await Member.findOne({ task: key, user: req.user._id });
+    const member = await Member.findOne({ task: new mongoose.Types.ObjectId(key), user: req.user._id });
     if (!member) {
         throw new ApiError(403, "task does not belong to the particular user or has been deleted");
     }
@@ -336,7 +336,7 @@ const toggleCheckList = async (req, res) => {
         throw new ApiError(404, 'checklist element id cannot be empty')
     }
 
-    const member = await Member.findOne({ task, user: req.user._id });
+    const member = await Member.findOne({ task : new mongoose.Types.ObjectId(task), user: req.user._id });
     if (!member) {
         throw new ApiError(403, "task does not belong to the particular user or has been deleted");
     }

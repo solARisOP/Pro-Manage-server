@@ -8,7 +8,8 @@ const TodoSchema = new mongoose.Schema({
     },
     text: {
         type: String,
-        trim: [true, "todo text is required"]
+        trim: [true, "todo text is required"],
+        required: [true, "text is required to create a todo"]
     },
     isDone: {
         type: Boolean,
