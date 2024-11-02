@@ -45,6 +45,10 @@ const getDateRanges = (timeline) => {
     start = new Date(start.getTime() - timezoneOffset)
     end = new Date(end.getTime() - timezoneOffset)
 
+    console.log(start)
+    console.log(end);
+    
+
     return {start, end}
 }
 

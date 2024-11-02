@@ -9,10 +9,6 @@ const validateData = (title, priority, checklist, dueDate) => {
 
         const currentDate = getMidnightTime(new Date())
         const date = getMidnightTime(dueDate)
-        console.log(typeof dueDate);
-        console.log(dueDate);
-        console.log(date);
-        console.log(currentDate);
         
         if(currentDate.getTime() > date.getTime()) {
             throw new ApiError(400, `${date.toDateString()} is a invalid date`)
